@@ -4,19 +4,28 @@ library(phytools)
 source('https://raw.githubusercontent.com/andrew-hipp/morton/master/R/label.elements.R')
 
 bs.min = 50 # anything less than this is not included in branch labels
+dat.meta2 <- read.xlsx('../DATA/SCHIEDEANAE_sampleMetadata_extractSPECIMENtable-20200917v2_S-MH20201016.xlsx', 1)
+row.names(dat.meta2) <- dat.meta2$SPMCODE
 
 tr.print <- read.tree(text = write.tree(tr$RAxML_bipartitions.concat.schiedeanae.tre))
+tr.spm <- label.elements(tr.print, returnNum = 4, delim = '|', fixed = T) %>%
+  as.character
+tr.print$tip.label <-
+  paste(tr.print$tip.label,
+        dat.meta2[tr.spm, 'State_Province_Region_territory'],
+        sep = '|')
 tr.print$node.label[tr.print$node.label == 'Root'] <- ''
 tr.print$node.label[which(as.integer(tr.print$node.label) < bs.min)] <- ''
 tr.print$tip.label <- gsub('planilomina', 'planilamina', tr.print$tip.label)
 tr.print$tip.label <-
-label.elements(tr.print, returnNum = c(1,4), returnDelim = ' - ', fixed = T) %>%
+label.elements(tr.print, returnNum = c(1,5,4), returnDelim = ' - ', fixed = T) %>%
   as.character
+tr.print$tip.label <- gsub('_', ' ', tr.print$tip.label, fixed = T)
 
 clades <- list(
-  'Outgroup' = c('Carex_arsenei - spm00004489', 'Carex_filifolia_var._filifolia - spm00000865'),
-  'Short scale clade' = c('Carex_mesophila - spm00006354', 'Carex_complexa - spm00000357'),
-  'Long scale grade' = c('Carex_muriculata - spm00000355', 'Carex_schiedeana - spm00000354')
+  'Outgroup' = grep('spm00004489|spm00000865', tr.print$tip.label, value = T),
+  'Woodland clade' = grep('spm00006354|spm00000357', tr.print$tip.label, value = T),
+  'Dryland grade' = grep('spm00000355|spm00000354', tr.print$tip.label, value = T)
 )
 
 # clades <- list(
